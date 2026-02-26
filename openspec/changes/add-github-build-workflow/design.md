@@ -25,8 +25,9 @@ The project currently has no CI/CD pipeline. The Dockerfile must be manually tes
    - Alternative: Add cache-from/cache-to for faster rebuilds
    - Rationale: Simplicity first. Cache can be added if build times become problematic
 
-3. **Pin action versions (v6, v4)**
+3. **Pin action versions (v6, v3)**
    - Rationale: Prevents breaking changes from automatic updates
+   - Note: v6 for build-push-action, v3 for setup-buildx-action (v4 does not exist)
 
 4. **Use setup-buildx-action**
    - Rationale: Required for build-push-action, enables advanced build features

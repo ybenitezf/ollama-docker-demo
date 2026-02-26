@@ -1,5 +1,8 @@
 ## ADDED Requirements
 
+### Note
+- setup-buildx-action uses v3 (v4 does not exist)
+
 ### Requirement: GitHub Actions workflow builds Docker image
 The GitHub Actions workflow SHALL build the Docker image defined in Dockerfile to verify it builds successfully without errors.
 
