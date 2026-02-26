@@ -131,6 +131,8 @@ CMD ["python", "main.py"]
 
 ### Git Conventions
 
+**Always use conventional commits when creating commits.** Format: `type(scope): description`
+
 - Keep commits atomic and focused
 - Use conventional commits: `type(scope): description`
 - Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`
