@@ -6,5 +6,5 @@
 
 ## 2. Verify
 
-- [ ] 2.1 Run workflow on a test branch and verify build still works
-- [ ] 2.2 Merge to main and verify image appears in Docker Hub with both tags
+- [x] 2.1 Run workflow on a test branch and verify build still works
+- [x] 2.2 Merge to main and verify image appears in Docker Hub with both tags
