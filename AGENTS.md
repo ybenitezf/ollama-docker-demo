@@ -2,52 +2,38 @@
 
 ## Project Overview
 
-This is a Docker-based project providing an Ollama + nginx setup for deployment on RunPod. The project consists primarily of Docker configuration files and shell scripts for deployment and management.
+Docker-based project providing an Ollama + nginx setup for deployment on RunPod. Primary files: Dockerfile, nginx.conf, supervisord.conf, and shell scripts.
 
 ## Build Commands
 
-This project uses GitHub Actions workflows for building and testing. Images are tested remotely on RunPod.
-
-### GitHub Actions
+### GitHub Actions (Primary)
 ```bash
-# Trigger workflow via git push or manually via GitHub UI
 git push origin main  # Triggers build workflow
 ```
 
-### Local Validation (Optional)
+Builds and pushes to Docker Hub:
+- `ybenitezf/ollama-docker-demo:latest`
+- `ybenitezf/ollama-docker-demo:<commit-sha>`
+
+### Local Build
 ```bash
-# Validate Dockerfile syntax (no Docker required)
-hadolint Dockerfile
-
-# Validate docker-compose.yml
-docker-compose config
-
-# Validate nginx config
-nginx -t -c nginx.conf
+docker build -t ybenitezf/ollama-docker-demo:local .
+docker run -d --gpus all -p 8080:80 ybenitezf/ollama-docker-demo:local
 ```
 
-## Lint and Code Quality
+### Local Validation
+```bash
+hadolint Dockerfile && docker build --check && nginx -t -c nginx.conf
+```
 
-- **Shell scripts**: Use shellcheck
-  ```bash
-  shellcheck your-script.sh
-  ```
-
-- **Dockerfiles**: Use hadolint
-  ```bash
-  hadolint Dockerfile
-  ```
-
-- **docker-compose**: Validate syntax
-  ```bash
-  docker-compose config
-  ```
-
-- **nginx configs**: Test with `nginx -t -c nginx.conf`
+## Lint Commands
+```bash
+shellcheck *.sh && hadolint Dockerfile && nginx -t -c nginx.conf
+```
 
 ## Testing
 
-There are currently no automated tests in this project. If tests are added, they would run in GitHub Actions. Remote testing on RunPod is performed manually after deployment.
+No automated tests exist. Manual testing on RunPod after deployment.
 
 ## Code Style Guidelines
 
@@ -56,103 +42,126 @@ There are currently no automated tests in this project. If tests are added, they
 1. **Keep it simple** - Deployment-focused; prefer clarity over cleverness
 2. **Minimal dependencies** - Avoid unnecessary tools
 3. **Idempotent operations** - Scripts should be safe to run multiple times
+4. **Use specific versions** - Never use `latest` tags for base images
 
 ### Shell Scripts
 
-- Use `#!/bin/bash` with bash version 4+
-- Always use `set -euo pipefail` for error handling
-- Use UPPER_SNAKE_CASE for constants, lower_snake_case for locals
+- Use `#!/bin/bash` or `#!/usr/bin/env bash`
+- Always use `set -euo pipefail`
+- Use UPPER_SNAKE_CASE for constants, `lower_snake_case` for locals
 - Quote all variable expansions: `"$VAR"` not `$VAR`
 - Use `[[ ]]` for conditionals, not `[ ]`
 
 ```bash
 #!/bin/bash
 set -euo pipefail
-
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 main() {
     local service_name="${1:-default}"
     echo "Starting $service_name"
 }
-
 main "$@"
 ```
 
 ### Dockerfiles
 
-- Use specific version tags, not `latest`
-- Order instructions from least to most frequently changed
-- Combine related RUN instructions to reduce layers
-- Always include HEALTHCHECK for main services
-- Use multi-stage builds when appropriate
-
 ```dockerfile
-FROM python:3.11-slim AS builder
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+FROM runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
+ARG S6_OVERLAY_VERSION=3.2.2.0
 
-FROM python:3.11-slim
-WORKDIR /app
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY . .
-EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-CMD ["python", "main.py"]
+RUN apt-get update && apt-get install -y nginx curl xz-utils
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp
+RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz && tar -C / -Jxpf /tmp/s6-overlay-x86_64.tar.xz
+
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+ENTRYPOINT ["/init"]
 ```
+
+- Use specific version tags, not `latest`
+- Order instructions least to most frequently changed
+- Combine related RUN instructions to reduce layers
+- Use `--no-cache-dir` for package installs
 
 ### nginx Configuration
 
-- Use tabs for indentation (nginx default)
-- Group related directives into logical blocks
-- Include comments for non-obvious configurations
-- Always test config with `nginx -t` before deploying
+```nginx
+upstream ollama { server 127.0.0.1:11434; }
+
+server {
+    listen 80 default_server;
+
+    location / {
+        proxy_set_header Host "localhost";
+        proxy_set_header X-Real-IP "127.0.0.1";
+        proxy_set_header X-Forwarded-For "127.0.0.1";
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://ollama;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+- Test config with `nginx -t` before deploying
+
+### supervisord Configuration
+
+```ini
+[supervisord]
+nodaemon=true
+user=root
+logfile=/dev/stdout
+logfile_maxbytes=0
+
+[program:ollama]
+command=ollama serve
+autostart=true
+autorestart=true
+
+[program:nginx]
+command=nginx -g "daemon off;"
+autostart=true
+autorestart=true
+```
+
+- Use ini format with clear section headers
+- Set `nodaemon=true` for container use
+- Configure autostart and autorestart for services
 
 ### Environment Variables
 
 - Use `.env` files for local development (add to `.gitignore`)
 - Provide `.env.example` as a template
 - Use UPPER_SNAKE_CASE naming
-- Document all required variables
+- Never commit secrets
 
-### File Naming
+## Git Conventions
 
-- Shell scripts: `kebab-case.sh` or `snake_case.sh`
-- Dockerfiles: `Dockerfile` (or `Dockerfile.<target>` for multi-stage)
-- Config files: `<service>.<ext>` (e.g., `nginx.conf`)
-
-### Error Handling
-
-- Exit codes: 0 (success), 1 (general error), 126 (not executable), 127 (command not found)
-- Log errors to stderr: `echo "Error: message" >&2`
-- Provide helpful error messages that explain what went wrong
-
-### Git Conventions
-
-**Always use conventional commits when creating commits.** Format: `type(scope): description`
-
-- Keep commits atomic and focused
-- Use conventional commits: `type(scope): description`
-- Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`
+Use conventional commits: `type(scope): description`
+Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`
 
 ## Dependencies
 
 - **Docker** - Required for building/running
-- **docker-compose** - Optional, for local development
 - **shellcheck** - Recommended for shell script linting
 - **hadolint** - Recommended for Dockerfile linting
 
-## Common Tasks
+## Troubleshooting
 
-### Adding a New Service
+1. Check GitHub Actions logs for build failures
+2. Validate all config files: `hadolint Dockerfile && nginx -t -c nginx.conf`
+3. Ensure Docker Hub credentials are configured
 
-1. Create service Dockerfile in `services/<service-name>/`
-2. Update docker-compose.yml if using
-3. Add environment variables to `.env.example`
-4. Document configuration in README.md
+## OpenSpec Workflow
 
-### Debugging
-
-Debugging is performed remotely on RunPod after deployment. Check GitHub Actions logs for build issues.
+- `/new-change` - Start a new feature/fix change
+- `/continue-change` - Continue working on an existing change
+- `/apply-change` - Implement tasks from a change
+- `/verify-change` - Verify implementation matches change artifacts
+- `/archive-change` - Archive a completed change
