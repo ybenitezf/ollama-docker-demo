@@ -7,8 +7,13 @@
 - [x] 1.5 Add `stdout_logfile_maxbytes=0` to `[program:nginx]` section
 - [x] 1.6 Add `redirect_stderr=true` to `[program:nginx]` section
 
-## 2. Validate
+## 2. Update nginx.conf
 
-- [x] 2.1 Run lint check: `hadolint Dockerfile && nginx -t -c nginx.conf`
-- [ ] 2.2 Build Docker image locally (N/A - tested on RunPod)
-- [ ] 2.3 Deploy to RunPod and verify logs appear in pod interface
+- [x] 2.1 Add `access_log /dev/stdout` to server block
+- [x] 2.2 Add `error_log /dev/stderr` to server block
+
+## 3. Validate
+
+- [x] 3.1 Run lint check: `hadolint Dockerfile && nginx -t -c nginx.conf`
+- [ ] 3.2 Build Docker image locally (N/A - tested on RunPod)
+- [ ] 3.3 Deploy to RunPod and verify logs appear in pod interface
