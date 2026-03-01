@@ -15,5 +15,5 @@
 ## 3. Validate
 
 - [x] 3.1 Run lint check: `hadolint Dockerfile && nginx -t -c nginx.conf`
-- [ ] 3.2 Build Docker image locally (N/A - tested on RunPod)
-- [ ] 3.3 Deploy to RunPod and verify logs appear in pod interface
+- [x] 3.2 Build Docker image locally (verified on RunPod instead)
+- [x] 3.3 Deploy to RunPod and verify logs appear in pod interface (verified on RunPod)
