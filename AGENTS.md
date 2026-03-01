@@ -18,7 +18,7 @@ Builds and pushes to Docker Hub:
 ### Local Build
 ```bash
 docker build -t ybenitezf/ollama-docker-demo:local .
-docker run -d --gpus all -p 8080:80 ybenitezf/ollama-docker-demo:local
+docker run -d --gpus all -p 8080:8080 ybenitezf/ollama-docker-demo:local
 ```
 
 ### Local Validation
@@ -92,7 +92,7 @@ ENTRYPOINT ["/init"]
 upstream ollama { server 127.0.0.1:11434; }
 
 server {
-    listen 80 default_server;
+    listen 8080 default_server;
 
     location / {
         proxy_set_header Host "localhost";
