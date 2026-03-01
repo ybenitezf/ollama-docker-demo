@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y nginx curl supervisor && rm -rf /var/li
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY nginx.conf /etc/nginx/sites-available/default
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 8080
 
