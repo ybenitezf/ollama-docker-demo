@@ -27,6 +27,7 @@ http {
         listen [::]:8080 default_server;
 
         location / {
+            auth_request /_auth;
             proxy_set_header Host "localhost";
             proxy_set_header X-Real-IP "127.0.0.1";
             proxy_set_header X-Forwarded-For "127.0.0.1";
@@ -36,6 +37,14 @@ http {
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
             proxy_cache_bypass $http_upgrade;
+        }
+
+        location = /_auth {
+            internal;
+            if ($http_authorization != "Bearer ${PRIVATE_KEY}") {
+                return 401;
+            }
+            return 200;
         }
     }
 }
