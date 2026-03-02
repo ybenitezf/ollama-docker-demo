@@ -1,7 +1,5 @@
 FROM runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
 
-ARG S6_OVERLAY_VERSION=3.2.2.0
-
 RUN apt-get update && apt-get install -y nginx curl supervisor && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL https://ollama.com/install.sh | sh

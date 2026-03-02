@@ -6,24 +6,20 @@ Docker-based project providing an Ollama + nginx setup for deployment on RunPod.
 
 ## Build Commands
 
-### GitHub Actions (Primary)
+### GitHub Actions (Primary - DO NOT build locally)
 ```bash
 git push origin main  # Triggers build workflow
 ```
+
+**⚠️ NEVER build Docker images locally.** The base image (`runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`) only supports x86_64/AMD64 architecture. Local builds will fail on ARM64 Macs (Apple Silicon). All builds must go through GitHub Actions.
 
 Builds and pushes to Docker Hub:
 - `ybenitezf/ollama-docker-demo:latest`
 - `ybenitezf/ollama-docker-demo:<commit-sha>`
 
-### Local Build
+### Local Validation Only
 ```bash
-docker build -t ybenitezf/ollama-docker-demo:local .
-docker run -d --gpus all -p 8080:8080 ybenitezf/ollama-docker-demo:local
-```
-
-### Local Validation
-```bash
-hadolint Dockerfile && docker build --check && nginx -t -c nginx.conf
+hadolint Dockerfile && nginx -t -c nginx.conf
 ```
 
 ## Lint Commands
