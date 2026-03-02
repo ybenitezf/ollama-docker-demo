@@ -7,7 +7,7 @@ main() {
     fi
 
     echo "Running envsubst on nginx.conf.template..."
-    envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+    envsubst '${PRIVATE_KEY}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
     echo "Validating nginx configuration..."
     nginx -t -c /etc/nginx/nginx.conf
