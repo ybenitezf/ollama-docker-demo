@@ -7,6 +7,7 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY prepare.sh /prepare.sh
+COPY pull-wrapper.sh /pull-wrapper.sh
 
 EXPOSE 8080
 
