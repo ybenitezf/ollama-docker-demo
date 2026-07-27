@@ -2,20 +2,24 @@
 
 ## Project Overview
 
-Docker-based project providing an Ollama + nginx setup for deployment on RunPod. Primary files: Dockerfile, nginx.conf, supervisord.conf, and shell scripts.
+Docker-based project providing both an Ollama and a vLLM Docker image for deployment on RunPod.
+Primary files: ollama/Dockerfile, ollama/nginx.conf.template, ollama/supervisord.conf, 
+vllm/Dockerfile, vllm/prepare.sh, and shell scripts under ollama/ and vllm/.
 
 ## Build Commands
 
 ### GitHub Actions (Primary - DO NOT build locally)
 ```bash
-git push origin main  # Triggers build workflow
+git push origin main  # Triggers build workflow for both Ollama and vLLM images
 ```
 
-**⚠️ NEVER build Docker images locally.** The base image (`runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`) only supports x86_64/AMD64 architecture. Local builds will fail on ARM64 Macs (Apple Silicon). All builds must go through GitHub Actions.
+**⚠️ NEVER build Docker images locally** (same as before - base image only supports x86_64/AMD64)
 
 Builds and pushes to Docker Hub:
-- `ybenitezf/ollama-docker-demo:latest`
-- `ybenitezf/ollama-docker-demo:<commit-sha>`
+- `ybenitezf/ollama-docker-demo:latest` (Ollama)
+- `ybenitezf/ollama-docker-demo:<commit-sha>` (Ollama)
+- `ybenitezf/ollama-docker-demo:vllm-latest` (vLLM)
+- `ybenitezf/ollama-docker-demo:vllm-<commit-sha>` (vLLM)
 
 ### Local Validation Only
 ```bash
@@ -24,7 +28,7 @@ hadolint Dockerfile && nginx -t -c nginx.conf
 
 ## Lint Commands
 ```bash
-shellcheck *.sh && hadolint Dockerfile && nginx -t -c nginx.conf
+shellcheck ollama/*.sh vllm/*.sh && hadolint ollama/Dockerfile vllm/Dockerfile && nginx -t -c ollama/nginx.conf.template
 ```
 
 ## Testing

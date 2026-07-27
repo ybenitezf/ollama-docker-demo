@@ -8,6 +8,22 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        include:
+          - name: ollama
+            dockerfile: ollama/Dockerfile
+            context: ollama
+            tags: |
+              ybenitezf/ollama-docker-demo:latest
+              ybenitezf/ollama-docker-demo:${{ github.sha }}
+          - name: vllm
+            dockerfile: vllm/Dockerfile
+            context: vllm
+            tags: |
+              ybenitezf/ollama-docker-demo:vllm-latest
+              ybenitezf/ollama-docker-demo:vllm-${{ github.sha }}
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,24 +41,24 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v4
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ hashFiles('Dockerfile') }}
+          path: /tmp/.buildx-cache-${{ matrix.name }}
+          key: ${{ runner.os }}-buildx-${{ matrix.name }}-${{ hashFiles(matrix.dockerfile) }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
+            ${{ runner.os }}-buildx-${{ matrix.name }}-
 
       - name: Build and Push
         uses: docker/build-push-action@v6
         with:
+          file: ${{ matrix.dockerfile }}
+          context: ${{ matrix.context }}
           push: ${{ github.event_name == 'push' &&
             github.event.ref == 'refs/heads/main' }}
-          tags: |
-            ybenitezf/ollama-docker-demo:latest
-            ybenitezf/ollama-docker-demo:${{ github.sha }}
+          tags: ${{ matrix.tags }}
           load: true
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          cache-from: type=local,src=/tmp/.buildx-cache-${{ matrix.name }}
+          cache-to: type=local,dest=/tmp/.buildx-cache-${{ matrix.name }}-new,mode=max
 
       - name: Cache cleanup
         run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          rm -rf /tmp/.buildx-cache-${{ matrix.name }}
+          mv /tmp/.buildx-cache-${{ matrix.name }}-new /tmp/.buildx-cache-${{ matrix.name }}
