@@ -29,6 +29,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Free disk space (vllm only)
+        if: matrix.name == 'vllm'
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/android
+          sudo rm -rf /opt/hostedtoolcache/CodeQL /usr/local/share/vcpkg
+          sudo rm -rf /var/cache/apt/archives /var/lib/apt/lists
+          df -h /
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
